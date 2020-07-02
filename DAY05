@@ -1,0 +1,176 @@
+DAY05 
+
+[ 복습 ] 
+함수
+단일행 함수: 함수에 대한 연산이 각 행에 연산되어 각 행의 결과가 나오는 것
+->문자함수, 숫자함수, NVL, 변환함수
+그룹행 함수: 결과가 하나의 행으로만 나오는 연산
+
+* 복습 실습 * 학생테이블에서 생일이 3월인 학생의 이름과 생일을 연도, 월, 일로 출력
+
+------------------------------------------------
+[ 단일행 함수, 그룹함수- 2 ]
+
+1 단일행함수- 4 변환함수) 
+	TO_CHAR(): 숫자를 문자로 변환
+	window -> preferences -> database -> editors -> data editors -> data formats 
+	-> type numbers, use grouping 에서 value 체크 해제하기 
+	- TO_CHAR(숫자값): 숫자를 문자로 바꾼다 
+	- TO_CHAR(숫자값,'999999'): 숫자를 문자로 바꾸되, 9하나당 1자리를 의미 
+	- TO_CHAR(숫자값,'0000'): 숫자를 문자로 바꾸되, 빈칸이 있다면 0으로 채워줌( 0대신 달러로 채우기도 가능)
+		ex. SELECT TO_CHAR(1234,'00000') FROM DUAL; -> 01234
+		ex. SELECT TO_CHAR(1234,'$00000') FROM DUAL; -> $01234
+	
+	- TO_CHAR(1234.5678,'9999.99'): 소수점 2자리까지 표기하되 3번째 자리에서 반올림한 숫자값이 결과가 된다 
+		ex. SELECT TO_CHAR(1234.5678,'9999.99') FROM DUAL; -> 1234.57
+		- 쉼표표기를 하려면 표현하고자 하는 자릿수와 실제 값의 자릿수를 맞춰주어야 한다, 아니며 #으로 결과 나옴
+		ex. SELECT  TO_CHAR(1234,'9,999'), TO_CHAR(123456789,'9,999')  FROM dual; -> 1,234, ######
+	
+	* 실습 * 교수테이블에서 학과(deptno)가 101번인 교수의 이름, 연봉을 천단위 구분기호를 사용해서 조회
+	단, 연봉 = pay *12 + bonus
+	> SELECT NAME, TO_CHAR(PAY*12+NVL(BONUS,0),'9,999') AS 연봉 FROM T_PROFESSOR WHERE DEPTNO=101;
+	
+	- TO_NUMBER('문자'): 문자를 숫자로 변환, 하지만 'ABCD'와 같이 문자열안에 숫자로 변환될 수 있는 값만 사용 가능
+
+	- TO_DATE('문자','날짜형식'): 문자를 날짜로 변환
+		ex. SELECT TO_DATE('2012/12/25'),TO_DATE('2012-12-25','YYYY-MM--DD') FROM DUAL;
+		단, 만약 문자에서 날짜를 구분하는 구분 문자 사용 시, 같은 구분문자를 사용하여 형식을 지정해야 한다
+	
+	* 실습 * 학생테이블에서 이름과 주민번호(JUMIN)를 조회하되, 주민번호(JUMIN)는 95/10/23 으로 출력
+	SUBSTR(문자열,start,length), CONCAT, || 사용해서 주민번호를 95년 10월 23일로 출력하기 
+	> SELECT NAME, SUBSTR(JUMIN,1,2)||'/'||SUBSTR(JUMIN,3,2)||'/'||SUBSTR(JUMIN,5,2) AS BRITH FROM T_STUDENT;
+	>SELECT NAME, 
+	TO_DATE('19'||SUBSTR(JUMIN,1,2)||'/'||SUBSTR(JUMIN,3,2)||'/'||SUBSTR(JUMIN,5,2),'YYYY/MM/DD')AS BRITH
+	FROM T_STUDENT;
+	
+	* 실습 * 교수테이블에서 2000년 전에 입사한 교수의 교수명, 입사일(HIREDATE), 
+	현재 연봉을 10% 인상하여 인상 전과 후의 연봉을 천단위 구분 기호 사용하여 조회
+	단, 연봉 = PAY*12+BONUS
+	hint.입사일에서 연도만 문자열로 변환하여, 2000년도 이전인가를 조건으로 잡기
+	> SELECT NAME,HIREDATE,TO_CHAR(PAY*12+BONUS,'0,000') AS 연봉 FROM T_PROFESSOR
+	WHERE TO_CHAR(HIREDATE,'YYYY')<2000; //자동형변환 
+
+
+1 단일행함수 -5 날짜함수)
+	- 날짜의 연산,  SYSDATE+1, SYSDATE+1/24(한시간 뒤)
+		ex. SELECT SYSDATE AS TODAY,SYSDATE+1 AS TOMORROW FROM DUAL;
+		ex. SELECT SYSDATE+1/24 FROM DUAL; 
+
+	- 기준일 - 비교일 = 지난날짜(일 기준)
+		ex. SELECT SYSDATE-TO_DATE('2019/8/04','YYYY/MM/DD') FROM DUAL;
+
+	- MONTHS_BETWEEN(현재날짜, 이전날짜): 현재날짜를 기준으로 이전날짜까지 몇개월 지났는가 조회
+		ex. SELECT MONTHS_BETWEEN('2020-07-04','2020-01-04') FROM DUAL;
+
+	- ADD_MONTHS(날짜값, 숫자): 숫자개월만큼 날짜값에 더해줌
+		ex. SELECT ADD_MONTHS('2020-07-04',11) FROM DUAL; > 2021-06-04 
+
+	- LAST_DAY(날짜) : 해당 달의 마지막 날
+		ex. SELECT LAST_DAY('2020-07-04') FROM DUAL;'
+
+	- NEXT_DAY(날짜,'요일'): 해당 날짜 기준으로 다음 요일이 오는 날짜 
+		ex. SELECT NEXT_DAY(SYSDATE,'SAT') FROM DUAL;
+
+	- ROUND(날짜) : 정오(12시)가 지나면 다음날짜, 지나지 않았으면 오늘 날짜 
+		>SELECT ROUND(TO_DATE('2020/6/20 12:11','yyyy/mm/ddhh:mi')) FROM DUAL; 
+
+	- TRUNC(날짜) : 정오가 지났든 안지났든 시간은 다 내리고 날짜 반환 
+	
+	* 날짜 계산 정리 *
+	a) 몇 일이 지났는가? 날짜1-날짜2
+	b) 몇 개월 지났는가? MONTHS_BETWEEN(날짜1, 날짜2)
+	c) 몇 년이 지났는가? TO_CHAR(날짜1, 'yyyy') - TO_CHAR(날짜2, 'yyyy')
+	
+	* 실습 * 교수테이블에서 오늘을 기준으로 이름과 근속 연수, 근속 개월수, 근속일수를 소숫점 없이 계산해서 조회하기
+	근속 연수: 몇년 지났는가, 근속 개월수: 몇 개월 지났는가, 근속 일수: 몇 일이 지났는가
+	> SELECT NAME, TO_CHAR(SYSDATE,'YYYY')-TO_CHAR(HIREDATE,'YYYY') AS 근속연수, 
+	TRUNC(MONTHS_BETWEEN(SYSDATE,HIREDATE)) AS 근속개월수, 
+	TRUNC(SYSDATE-HIREDATE) AS 근속일수
+	FROM T_PROFESSOR;
+
+
+2) 그룹 함수 (Aggregate Function)
+	정의? 테이블의 여러 데이터를 동시에 입력받아 한개의 결과값이 나오는 함수
+	조건? 여러 개의 행을 그룹지어서 계산하는 함수이기 때문에 어떤 컬럼으로 그룹을 만들 것인지 꼭 지정해야 한다. 
+	사용방법?그룹함수(컬럼), 컬럼대신 *이 있다면 전체 데이터 의미
+	종류? 
+	- COUNT(컬럼):	NULL 값을 제외한 전체 갯수 출력 
+	- SUM(컬럼):	NULL 값을 제외한 전체 합계 출력
+	- AVG(컬럼)	NULL 값을 제외한 전체 평균 출력
+	- MAX(컬럼)
+	- MIN(컬럼)
+	추가 KEYPOINTS
+	GROUP BY, HAVING 
+
+	* 실습 * 교수테이블에서 월급의 합계와 보너스의 합계, 보너스를 받는 사람 명수, 월급의 평균 조회
+	> SELECT SUM(PAY),SUM(BONUS),COUNT(BONUS) FROM T_PROFESSOR;
+	보너스의 평균은 NULL값때문에 AVG(BONUS)로 구할 수 없다
+	> SUM(BONUS)/COUNT(*) 
+	> AVG(NVL(BONUS,0))
+
+	* 실습 * 교수테이블에서  학과별 교수의 월급 평균 조회
+	> SELECT DEPTNO, AVG(PAY) FROM T_PROFESSOR;
+	> 오류 BC 일반 컬럼과 그룹함수는 함께 사용 불가! GROUP BY 일반컬럼 사용하여 해결
+	> SELECT DEPTNO, AVG(PAY) FROM T_PROFESSOR GROUP BY DEPTNO;
+
+	* 실습 * 학생테이블에서 학년별로 학생 수 조회
+	> SELECT GRADE, COUNT(*) FROM T_STUDENT GROUP BY GRADE ;
+	
+	* 실습 * 학생테이블에서 학년별로,  학과별로 학생 수 조회
+	> SELECT GRADE, DEPTNO1,COUNT(*) FROM T_STUDENT GROUP BY GRADE,DEPTNO1 ORDER BY 1;
+
+	* 실습 * 교수테이블에서 직급별 평균 급여를 조회
+	> SELECT "POSITION"TION,AVG(PAY) FROM T_PROFESSOR GROUP BY POSITION;
+
+	* 실습 * 교수테이블에서 직급별 평균 급여가 300 이상인 것만 조회
+	여기서!!!그룹함수는 WHERE절에 조건으로 사용할 수 없다
+	그룹함수를 조건으로 사용하기 위해서  WHERE 대신 HAVING 을  사용 
+	>SELECT POSITION, AVG(PAY) FROM T_PROFESSOR GROUP BY "POSITION" HAVING AVG(PAY)>300;
+	
+	* 실습 * 학생테이블에서 학과별 학생수를 조회하는데
+	단, 학생수가 3명 이상인 학과만 조회
+	> SELECT DEPTNO1, COUNT(*) FROM T_STUDENT GROUP BY DEPTNO1 HAVING COUNT(*)>=3 ORDER BY 1;		
+
+	* 실습 * 학생테이블에서 학과별 학생수를 조회하는데
+	단, 2학년 학생만 
+	> SELECT DEPTNO1, COUNT(*) FROM T_STUDENT WHERE GRADE =2 GROUP BY DEPTNO1;
+	조건을 잡을 때 조건 조회X
+
+	- SELECT 조회커리를 할 때, 내가 조회할 컬럼이 아닌 다른 컬럼명으로 WHERE 절에 조건으로 사용할 수 있다
+	- WHERE & HAVING: SELECT 쿼리문에서 컬럼의 값으로 조건을 비교해서 조회를 하고 싶을 때는 WHERE 절 
+			WHERE 그룹함수 X -> HAVING 그룹함수의 값으로 조건을 정하고자 목적 
+ 	-조심스러운 일반화: WHERE 뒤에는 일반컬럼, HAVING 뒤에는 그룹함수 
+
+	* 실습 * 학생테이블에서 몸무게가 가장 무거운 학생의 몸무게와
+	몸무게가 가장 가벼운 학생의 몸무게 조회
+	> SELECT max(weight), min(weight) FROM T_STUDENT;
+
+	* 실습 * 학생테이블에서 학과별 몸무게가 가장 무거운 학생의 몸무게와
+	몸무게가 가장 가벼운 학생의 몸무게 조회
+	> SELECT deptno1,max(weight), min(weight) FROM T_STUDENT GROUP BY DEPTNO1 ORDER BY 1;
+
+	* 실습 * 교수테이블에서 직위별 근속일의 평균 구하기
+	> SELECT POSITION, AVG(SYSDATE-HIREDATE) FROM T_PROFESSOR GROUP BY POSITION; 
+
+	* 실습 * 직원테이블에서 직업별 연봉(SAL) 평균 구하기
+	> SELECT JOB, AVG(SAL) FROM T_EMP GROUP BY JOB;
+
+	* 실습 * 직원테이블에서 매니저별 관리하는 직원수 조회
+	> SELECT MGR,COUNT(*) FROM T_EMP GROUP BY MGR;
+	> SELECT DISTINCT MGR FROM T_EMP;
+
+--------------------------------
+[ SELECT 쿼리문 순서 ]
+SELECT 컬럼명
+FROM 테이블명
+WHERE 조건절 
+GROUP BY 그룹할 컬럼명 
+HAVING 그룹함수의 조건절
+ORDER BY 정렬컬럼;
+
+---------------------------------
+
+
+
+
+
