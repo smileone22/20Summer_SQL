@@ -1,0 +1,297 @@
+DAY03
+
+[복습]
+DML: INSERT, UPDATE, DELETE
+
+<INSERT>
+:데이터1개 테이블에 넣기
+INSERT INTO [테이블명] (컬럼명1, 컬럼명2, ...)
+VALUES (값1, 값2, ...)
+
+:데이터 여러개를 테이블에 넣기
+INSERT ALL
+INTO [테이블명] VALUES (값1, 값2, ...)
+INTO [테이블명] VALUES (값1, 값2, ...)
+SELECT * FROM DUAL;
+
+시퀀스 생성 
+CREATE SEQUENCE [시퀀스명] START WITH [시작숫자];
+
+--------------
+
+<UPDATE>
+:데이터수정
+UPDATE [테이블명] 
+SET [컬럼명]=[수정값]
+WHERE [조건식];
+
+--------------
+
+<DELETE>
+:데이터 삭제 -> DELETE VS TRUNCATE
+1) TRUNCATE TABLE [테이블명];
+	테이블 최초 생성된 초기상태로 만든다
+	용량이 줄고, 관련된 모든 데이터가 삭제
+	rollback 불가능하고 전체삭제만 가능하다 
+2) DELETE [테이블명] WHERE [조건식];
+	데이터만 삭제되고 테이블 용량은 줄어 들지 않는다
+	삭제후 잘못 삭제한 것을 되돌릴 수 있다(commit, rollback)
+	롤백 정보를 기록해야하므로 truncate에 비해 느리다
+---------------
+
+
+
+
+[TCL: TRANSACTION CONTROL LANGUAGE ]
+
+<COMMIT>
+: DML로 내린 명령에서 현재 상태를 저장하는 명령
+- COMMIT을 해야지만 데이터베이스에 저장이 된다. 
+ -만일, 하지 않을 경우, 메모리에만 저장된다
+
+<ROLLBACK>
+: COMMIT 상태로 되돌림 
+
+<조회 시 컬럼 크기 조정>
+COL 컬럼명 FOR A10;
+COL 컬럼명 FOR 999;
+
+
+
+--------------------
+<실습>
+hero 테이블에 
+num: 4
+name: 캡틴아메리카
+age: 32
+
+SQL> INSERT INTO hero
+  2  VALUES (4,'캡틴아메리카',32);
+
+CMD에서  추가해도 DBEAVER에 나오지 않음
+COMMIT 명령까지 수행해야 DATABASE에 저장된다! 
+---------------------
+[DBEAVER 프로그램 사용해서 쿼리명령을 내린다]
+
+<프로그램 다운로드 및 설치>
+https:// dbeaver.io
+Download 클릭 
+archive - 5.3.5 버전 설치 
+
+oracle- local host -XE
+username:dbms
+password:1234
+
+Edit driver
+add file 
+C:\oraclexe\app\oracle\product\11.2.0\server\jdbc\lib
+ojdbc6.jar
+
+test connection시 
+해당 오류 발생 시 계정 접근을 풀어줘야 한다. 
+ORA-28000:  the account is locked 
+
+sqlplus->system(관리자계정)로그인해서 ALTER USER dbms ACCOUNT UNLOCK; 
+
+
+---------------
+*KEY WORD
+- SELECT 명령
+- WHERE 절
+- 연산자: 산술, 연결, 비교, 논리, 범위, 기타, 정렬, 집합
+---------------
+
+[DQL: Data Query Language]
+
+<SELECT: 조회, read > 
+사용 목적?데이터를 조회하거나 질의할 목적으로 사용
+구조? SELECT [컬럼 or 표현식] FROM [테이블 or 뷰];
+
+-컬럼자리에 *이 온다면?
+모든 컬럼의 데이터를 조회한다는 뜻
+ex. SELECT * FROM T_DEPT;
+
+-여러개의 컬럼을 조회하기 위해서는 컬럼명1,컬럼명 2
+ex. SELECT EMPNO,ENAME FROM T_EMP;
+
+-표현식: 문자열, 연산식 
+
+-컬럼의 별칭 사용방법
+:컬럼명 AS 별칭 ( AS 생략가능), 별칭은 띄어쓰기 불가, 띄어쓰기 하고싶다면 " "안에 넣아야 함
+ex. SELECT EMPNO AS 직원번호,
+	ENAME AS 직원명,
+	JOB AS 직급
+FROM T_EMP;
+
+* 실습 *
+t_student 테이블에서 name, grade, jumin 컬럼을 조회
+단, name 은 이름으로, grade는 학년으로, jumin은 주민번호라는 별명으로 조회하기
+-> SELECT name AS 이름, grade AS 학년, jumin AS 주민번호 FROM T_STUDENT;
+
+-DISTINCT 기능?
+: 중복을 제거한 후 출력 
+ex. 학생 테이블에서 몇학년까지 있는지 중복을 제거하고 확인
+-> SELECT DISTINCT grade FROM T_STUDENT;
+
+* 실습 *
+교수테이블에서 교수 직위가 어떤 종류들이 있는지 중복을 제거하고 조회
+->SELECT DISTINCT POSITION FROM T_PROFESSOR;
+
+------------------------------------------------------------------------------------
+
+
+[연산자]: 연산의 기능이 있는 문자
+
+1. 산술 연산자
+	종류? +, -, *, /
+
+	*실습* 교수 테이블에서 교수명(name), 교수 월급(pay), 교수 보너스(bonus) 항목들이 		있는데 이번달에 받을 월급을 월급+보너스로 조회
+	->SELECT name, pay, bonus, pay+bonus FROM T_PROFESSOR;
+	-null은 산술연산이 불가능하므로, 
+	 NULL 처리 함수를 사용해서 계산이 가능한 값으로 변환해야 한다. 	
+
+
+2. 연결 연산자 | | (shift \\)
+	기능? 컬럼을 연결해서 하나의 컬럼으로 조회
+	*실습* 학생테이블에서 이름과 ID를 연결해서 출력하기
+	-> SELECT NAME || ID  FROM T_STUDENT;
+
+	이름뒤에 학생 붙이기
+	-> SELECT NAME || '학생'  FROM T_STUDENT;
+	
+	*실습* 다음과 같이 학생 테이블의 학생 이름(name)과 
+	키(height)와 몸무게(weight)를 단위와 함께 출력하기 
+	SELECT NAME ||'님' AS 이름 , 
+	HEIGHT||'cm' AS 키 , 
+	WEIGHT||'kg' AS 몸무게 
+	FROM T_STUDENT;
+
+3. 비교 연산자 
+	기능? 두 대상과의 관계를 비교한 결과를 연산
+	종류? >, <, >=(같거나 크다), <=(같거나 작다) 
+	=(같다) 
+	<>,!=,^=(다르다)
+	
+	비교연산자와 조건절을 활용한 실습들 
+	* 실습 * 학생 테이블에서 몸무게가 60kg 이상인 학생의 이름, 몸무게, 키를 조회
+	1) 어떤 테이블을 조회할 것인가
+	2) 어떤 컬럼을 조회할 것인가
+	3) 조건이 무엇인가
+	-> SELECT name, weight, height FROM T_STUDENT WHERE weight >=60;
+	
+	* 실습 * 학생 테이블에서 학과번호(deptno1)가 101인 학생의 
+	이름, 학년, 학과번호를 조회하기
+	->SELECT name,grade, deptno1 FROM T_STUDENT WHERE DEPTNO1=101;
+	
+	* 실습 * 교수테이블에서 직위가 정교수인 교수의 이름과, 직위, 월급 조회하기
+	->SELECT name, POSITION, pay FROM T_PROFESSOR WHERE POSITION='정교수';
+
+	* 실습 * 교수테이블에서 직위가 정교수가 아닌 교수의 이름과 직위, 월급을 조회하기
+	-> SELECT name,POSITION,pay FROM T_PROFESSOR WHERE "POSITION"!='정교수';
+	
+	* 실습 *
+	bmi 계산 = 몸무게(kg)/ (키(m) *키(m))
+	23 이상 부터는 과체중 
+	학생 테이블에서 이름, 키, 몸무게, bmi를 조회하는데
+	bmi가 23이 넘는 학생들만 조회하기
+	->
+	SELECT NAME, HEIGHT, WEIGHT, WEIGHT/((HEIGHT/100)*(HEIGHT/100)) AS BMI
+	FROM T_STUDENT
+	WHERE WEIGHT/((HEIGHT/100)*(HEIGHT/100))>=23;
+
+
+4. 논리 연산자
+	기능? 조건과 조건을 연산 
+	종류? 
+	-AND : 두 조건이 모두 해당하면 조회  
+	-OR   : 두 조건 중 하나라도 해당하면 조회
+	-NOT : 조건에 해당하지 않을 경우 조회
+
+	* 실습 * 학생 테이블에서 몸무게가 60이상이면서 키가 140 이상인 학생의 
+	이름(name), 몸무게(weight), 키(height)를 조회
+	->SELECT name, weight, height
+	FROM T_STUDENT
+	WHERE WEIGHT>=60 AND HEIGHT >=140;
+
+
+	* 실습 * 학생 테이블에서 몸무게가 60이상이 아닌 학생의 
+	이름(name), 몸무게(weight), 키(height)를 조회
+	->SELECT name, weight, height 
+	FROM T_STUDENT
+	WHERE NOT weight>=60;
+
+5. 범위 연산자 
+	기능? 컬럼에서 조회하고 싶은 범위에 포함하고 있는 값만을 조회
+	종류? 
+	-IN: WHERE [컬럼명 ] IN (값1 ,값2 ... )
+	-BETWEEN: 특정 범위의 값을 검색할 때 사용 
+	BETWEEN 값1 AND 값2 
+
+	* 실습 * 교수테이블에서 교수의 직위가 정교수, 조교수를 포함하는 교수의
+	이름과 직위를 조회
+	->SELECT name, POSITION  
+	FROM T_PROFESSOR
+	WHERE POSITION IN ('정교수','조교수');
+
+	* 실습 * 학생테이블에서 학년이 2학년 부터 4학년인 학생의
+	이름, 학년, 학과번호(deptno1)를 조회
+	-> SELECT name, grade, deptno1
+	FROM T_STUDENT
+	WHERE grade BETWEEN 2 AND 4;
+	
+	* 실습-in 연산자* 직원테이블(t_emp)에서 직업(job)이 CLERK, MANAGER 인 직원의
+	직원명(ename), 직업(job), 연봉(sal)을 조회
+	-> SELECT ENAME, job, SAL
+	FROM T_EMP
+	WHERE JOB IN ('CLERK','MANAGER');
+	- 'clerk', 'manager' (x) -> 문자열에서는 대소문자 구분 필요 	
+
+	* 실습-between 연산자* 교수 테이블에서 연봉이 400~500 사이인 교수의
+	이름, 직위(position)과 연봉을 조회
+	->SELECT NAME,"POSITION", PAY
+	FROM T_PROFESSOR
+	WHERE PAY BETWEEN 400 AND 500;
+
+	* 실습 *  교수 테이블에서 고용일자(hiredate)가 1999-12-12부터 오늘 사이에 고용된
+	교수의 이름, 직위(position)와 고용일자를 조회
+	-> SELECT name, POSITION, hiredate
+	FROM T_PROFESSOR
+	WHERE HIREDATE BETWEEN TO_DATE('1999-12-12','yyyy-mm-dd') AND sysdate;
+
+6. 기타 연산자: LIKE
+	기능? 컬럼에서 문자 뒤에 '패턴매칭'을 할 경우 사용 
+	사용방법? SELECT [ 컬럼명 ] FROM [ 테이블명 ] WHERE [ 컬럼명 ] LIKE [ wildcard] 
+	-wildcard: 조커같은 기능으로 어떤 문자가 와도 상관 없다 
+		종류
+		1) %: 몇 글자의 문자가 와도 상관 없다
+		2) _ : 한 글자의 아무 문자가 와야 한다 
+	* 실습 * 학생 테이블에서 성이 김씨인 학생의 학번, 이름, 학년을 조회
+	->SELECT STUDNO, name, grade
+	FROM T_STUDENT
+	WHERE name LIKE '김__';
+	* 실습 * 학과 테이블(t_department)에서 컴퓨터 관련 학부의 
+	학과번호(deptno), 학과명(dname), 건물위치(build)를 조회
+	-> SELECT deptno, dname, build  
+	FROM T_DEPARTMENT
+	WHERE dname LIKE '컴퓨터%';
+
+
+
+------>조회 시 컬럼이 들어가야할 위치에 연산을 했다면
+데이터 조회 시 조건에 해당하는 데이터만 조회를 할건데
+조건에 연산자가 들어가는 경우 
+SELECT 조회시에 조건 정하는 방법 : 
+
+
+
+[WHERE  절]
+: 조건 지정 가능
+: SELECT [컬럼명] FROM [테이블] WHERE [조건식];
+-조건절에는 별칭 사용 불가 
+
+
+====================
+*Dbeaver 단축키
+대문자 변경하기: 블럭처리 후 Ctrl+Shift+x
+소문자 변경하기: 블럭처리 후 Ctrl+Shift+y
+
