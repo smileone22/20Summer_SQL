@@ -1,0 +1,310 @@
+
+DAY06
+
+[ 복습실습 ] 
+학생테이블에서 학과별로 학과번호, (최대몸무게 - 최소몸무게)가 30이상인 학과만 구하 되, 학과별 오름차순 정렬
+> SELECT DEPTNO1, MAX(WEIGHT)-MIN(WEIGHT) AS 몸무게차 
+FROM T_STUDENT
+GROUP BY DEPTNO1
+HAVING MAX(WEIGHT)-MIN(WEIGHT)>=30 
+ORDER BY 1;
+
+>SELECT DEPTNO1, COUNT(*) AS 학생수 
+FROM T_STUDENT
+WHERE SUBSTR(TEL,1,3)='055'
+GROUP BY DEPTNO1
+ORDER BY 1 ASC;
+
+==============
+*KEYWORD
+- JOIN 
+- USING
+==============
+
+[ JOIN ]
+
+- 정의? 2개 이상의 테이블에서 원하는 데이터를 가져와 조회하는 기법
+- 사용이유? 이상현상을 최소화하기 위해서 정규화를 통해 테이블을 나누어 저장 
+	   조회할 때 필요한 데이터가 여러 테이블에 나누어 저장될 수 있으므로, 데이터를 한번에 조회할 시
+	   여러개의 테이블을 조회하는 방법이 필요하다 
+ex. 정규화로 인해 테이블이 다음과 같이 분리되었을 때 
+-> 학생테이블, 교수테이블, 학과테이블 -> 학생이름과 담당교수의 이름을 한번에 조회
+- 종류? 
+1) INNER JOIN - catersian product, equi join, non-equi join 
+2) OUTER JOIN - left outer join, right outer join, full outer join 
+3) SELF JOIN
+4) NATURAL JOIN (실무에는 잘 사용되지 않지만, 시험에 가끔 나옴)
+
+< INNER JOIN >
+:집합으로 따지자면 교집합 
+1. INNER- Catersian Product ( 카티션 곱 )
+	: 2개 이상의 테이블에서 원하는 데이터를 모두 가져와 조회하는 기법 
+	: 테이블1 X 테이블2 = 테이블1과 테이블2의 행 수를 곱한 결과가 나온다 
+	* 실습 * 
+	학생 테이블과 교수테이블을 카티션 곱으로 조인 
+	> SELECT * FROM T_STUDENT,T_PROFESSOR;
+	
+	단, 두 테이블에서 동일한 컬럼명을 갖고 있을 경우, 컬럼명으로만 조회할 수 없다
+		ex. 학생테이블의 name, 교수테이블의 name이 있는데
+		SELECT NAME FROM T_STUDENT,T_PROFESSOR; --X 
+	
+	하지만 동일한 컬럼명을 조회할 경우, 테이블명.컬럼명 으로 정확하게 지정해야한다 
+	ex. SELECT T_STUDENT.NAME, T_PROFESSOR.NAME FROM T_STUDENT,T_PROFESSOR;
+
+	테이블 별명 지정 시 테이블명 테이블별명 지정 
+	ex. SELECT s.name, p.name FROM T_STUDENT s,T_PROFESSOR p;
+
+	SELECT ... FROM 테이블1, 테이블2; 
+	모든 조합이 나오게 되는데, 이 경우를 카티션 곱(CROSS JOIN)이라고 한다
+
+2. INNER- Equi Join ( 등가조인 )
+	: 일반적으로 가장 많이 사용하는 조인이며, 두 테이블의 값이 같은 것을 조회 시 사용 
+	사용방법? 
+	1) Oracle 
+	SELECT [컬럼명] FROM [테이블1], [테이블2] WHERE [조인조건]
+	2) Ansi 구문 
+	SELECT [컬럼명] FROM [테이블1] JOIN [테이블2] ON [조인조건]
+	
+	* 실습 * 
+	학생 테이블과 교수 테이블을 등가조인하여, 학생의 이름과 담당 교수의 번호, 담당 교수의
+	이름을 같이 조회
+	> SELECT s.name, s.profno, p.name
+	FROM T_PROFESSOR p, T_STUDENT S 
+	WHERE s.PROFNO = p.PROFNO;		
+	>SELECT s.name, s.profno, p.name
+	FROM T_STUDENT s JOIN T_PROFESSOR p 
+	WHERE s.PROFNO = p.PROFNO
+
+	* 실습 * 
+	학생 테이블과 학과 테이블(T_DEPARTMENT)을 조인하여, 학생의 이름, 학과번호, 학과명 조회
+	> SELECT s.NAME, s.DEPTNO1, DNAME 
+	FROM T_STUDENT ss, T_DEPARTMENT d;
+	> SELECT  NAME, DEPTNO, DNAME 
+	FROM T_STUDENT JOIN T_DEPARTMENT 
+	ON DEPTNO1=DEPTNO
+
+	* 실습 * 
+	학생 테이블과 학과 테이블과 교수테이블을 사용하여,
+	학생의 이름, 학과명, 지도교수명을 조회 (3개 이상의 테이블을 조인할 경우)
+	> SELECT S.NAME, D.DNAME, P.NAME  
+	FROM T_STUDENT S, T_DEPARTMENT D, T_PROFESSOR P 
+	WHERE S.DEPTNO1=D.DEPTNO AND D.DEPTNO =P.DEPTNO; 
+	> SELECT S.NAME, D.DNAME, P.NAME
+	FROM T_STUDENT S JOIN T_DEPARTMENT D ON S.DEPTNO1=D.DEPTNO 
+			  JOIN T_PROFESSOR P ON S.DEPTNO1=P.DEPTNO;  
+
+	* 실습 * 
+	학생 테이블과 교수테이블을 조인하여 학과번호가 101번인 학생들의
+	학생명과 지도교수명을 조회
+	> SELECT s.name, p.name
+	FROM T_STUDENT s, T_PROFESSOR p 
+	WHERE s.PROFNO = p.PROFNO AND DEPTNO1=101;
+	>SELECT  s.name, p.name
+	FROM T_STUDENT s JOIN T_PROFESSOR p 
+	ON s.PROFNO=p.PROFNO AND DEPTNO1=101;
+
+	* 실습 * 
+	직원2테이블(t_emp2)과 직급(t_post) 테이블을 조인하여
+	사원명(name), 직급(post), 현재연봉(pay), 해당직급의 연봉 하한금액(s_pay), 상한 금액(e_pay)을 조회
+	> SELECT e.NAME, e.POST, e.PAY AS 현재연봉, p.S_PAY AS 하한금액, p.E_PAY AS 상한금액
+	FROM T_EMP2 e , T_POST p 
+	WHERE e.post=p.post;
+	> SELECT e.NAME, e.POST, e.PAY AS 현재연봉, p.S_PAY AS 하한금액, p.E_PAY AS 상한금액
+	FROM T_EMP2 e JOIN T_POST p
+	ON e.post=p.post;
+
+3. INNER- Non-Equi Join( 비등가 조인 )
+	: 두 테이블의 값이 크거나 작은 것을 조회 시 사용
+	* 실습 * 
+	step1. 학생테이블과 성적(t_exam01) 테이블을 조인하여 학생명과 성적을 조회 
+		>(oracle) SELECT s.NAME, e.TOTAL
+		FROM T_STUDENT s, T_EXAM01 e 
+		WHERE s.STUDNO=e.STUDNO;
+		>(ansi) SELECT s.NAME, e.TOTAL
+		FROM T_STUDENT s JOIN T_EXAM01 e 
+		ON s.STUDNO=e.STUDNO;
+	step2.  학생테이블과 성적(t_exam01) 테이블과 학점테이블(t_credit)을 조인하여
+	학생명과 성적과 학점을 조회
+		>(oracle)SELECT s.NAME, e.TOTAL, c.grade
+		FROM T_STUDENT s, T_EXAM01 e, T_CREDIT c
+		WHERE s.STUDNO=e.STUDNO AND
+		e.TOTAL BETWEEN c.MIN_POINT AND c.MAX_POINT;
+		>(ansi) SELECT s.NAME, e.TOTAL, c.grade
+		FROM T_STUDENT s JOIN T_EXAM01 e ON s.STUDNO=e.STUDNO
+		JOIN T_CREDIT c ON e.TOTAL BETWEEN c.MIN_POINT AND c.MAX_POINT;
+
+	* 실습 * 
+	직원(t_emp2) 테이블과 직급(t_post)테이블을 조인하여 
+	사원명, 나이, 현재직급, 예상직급을 조회
+	step1. t_emp2 테이블에서 현재나이 가져오기
+	step2. 나이를 활용하여 비등가 조인으로 예상 직급 조회
+	> (oracle) 
+	SELECT e.NAME, TO_CHAR(SYSDATE,'yyyy')-TO_CHAR(BIRTHDAY,'yyyy')+1 AS 나이, 
+	e.POST AS 현재직급, p.POST AS 예상직급
+	FROM T_EMP2 e, T_POST p 
+	WHERE TO_CHAR(SYSDATE,'yyyy')-TO_CHAR(BIRTHDAY,'yyyy')+1 BETWEEN p.S_AGE AND p.E_AGE;
+	> (ansi)
+	SELECT e.NAME, TO_CHAR(SYSDATE,'yyyy')-TO_CHAR(BIRTHDAY,'yyyy')+1 AS 나이, 
+	e.POST AS 현재직급, p.POST AS 예상직급
+	FROM T_EMP2 e JOIN T_POST p 
+	ON TO_CHAR(SYSDATE,'yyyy')-TO_CHAR(BIRTHDAY,'yyyy')+1 BETWEEN p.S_AGE AND p.E_AGE;
+	
+	* 실습 * 
+	고객테이블(t_customer)과 상품테이블(t_gift)을 조인해서 
+	고객명(c_name), 고객포인트(c_point), 고객이 선택할 수 있는 상품명(g_name), 
+	상품의 최소 포인트(g_start), 상품의 최대포인트(g_end)조회 조회
+	> (oracle) 
+	SELECT c.C_NAME AS 고객명, c.C_POINT AS 고객포인트,  g.G_NAME AS 상품명, 
+	g.G_START AS 상품최소포인트,g.G_END AS 상품최대포인트
+	FROM T_CUSTOMER c, T_GIFT g 
+	WHERE c.C_POINT BETWEEN g.G_START AND g.G_END;
+	>(ansi) 
+	SELECT c.C_NAME AS 고객명, c.C_POINT AS 고객포인트, g.G_NAME AS 상품명, 
+	g.G_START AS 상품최소포인트,g.G_END AS 상품최대포인트
+	FROM T_CUSTOMER c JOIN T_GIFT g 
+	ON c.C_POINT BETWEEN g.G_START AND g.G_END;
+	
+	* 실습 * 
+	고객테이블(t_customer)과 상품테이블(t_gift)을 조인해서 
+	고객이 선택할 수 있는 상품명중 '산악용자전거'를 선택할 수 있는
+	고객명, 고객포인트, 상품명을 조회
+	> (oracle) 
+	SELECT c.C_NAME AS 고객명, c.C_POINT AS 고객포인트, g.G_NAME AS 상품명
+	FROM T_CUSTOMER c, T_GIFT g 
+	WHERE c.C_POINT >= g.G_START AND g.G_NAME='산악용자전거';
+	>(ansi)
+	SELECT c.C_NAME AS 고객명, c.C_POINT AS 고객포인트, g.G_NAME AS 상품명
+	FROM T_CUSTOMER c JOIN T_GIFT g 
+	ON c.C_POINT >= g.G_START AND g.G_NAME='산악용자전거';
+
+
+
+	
+< OUTER JOIN >
+: 외부조인으로 조인 조건에 맞지 않는 데이터도 같이 조회해야할 때 사용
+: 집합으로 따지면 합집합
+종류? 
+
+1. LEFT JOIN
+: 조건에 불충족하는 왼쪽 테이블의 데이터도 포함
+
+2. RIGHT JOIN
+: 조건에 불충족하는 오른쪽 테이블의 데이터도 포함
+
+3. FULL OUTER JOIN
+: 조건에 불충족하는 모든  테이블의 데이터도 포함
+
+* 실습 * 
+학생테이블과 교수테이블을 조인하여 학생 이름, 지도교수명을 조회(학생.profno = 교수.profno)
+단, 지도교수가 결정되지 않은 학생의 명단도 함께 출력 (즉, 학생기준 profno 지정되지 않은 학생 포함) 
+> (oracle 은 없고 ansi 사용)
+SELECT s.name, p.name
+FROM T_STUDENT s LEFT OUTER JOIN T_PROFESSOR p 
+ON s.PROFNO =p.PROFNO;
+
+* 실습 * 
+학생테이블과 교수테이블을 조인하여 학생 이름, 지도교수명을 조회(학생.profno = 교수.profno)
+단, 지도학생이 결정되지 않은 교수의 명단도 함께 출력
+> SELECT s.name AS 학생명, p.name AS 교수명
+FROM T_STUDENT s RIGHT OUTER JOIN T_PROFESSOR p 
+ON s.PROFNO =p.PROFNO;
+
+* 실습 * 
+학생테이블과 교수테이블을 조인하여 학생 이름, 지도교수명을 조회(학생.profno = 교수.profno)
+단, 지도교수가 결정되지 않은 학생과 지도학생이 결정되지 않은 교수의 명단도 함께 출력 
+> SELECT s.name AS 학생명, p.name AS 교수명
+FROM T_STUDENT s FULL OUTER JOIN T_PROFESSOR p 
+ON s.PROFNO =p.PROFNO;
+
+<SELF JOIN>
+:  동일한 테이블 내 원하는 데이터가 있어서 조인해야할 경우 셀프 조인을 한다 
+
+* 실습 *
+부서2테이블에서 부서명가 부서의 상위부서명을 조회
+>(oracle)
+SELECT t1.DNAME AS 부서명, t2.DNAME AS 상위부서명
+FROM T_DEPT2 t1, T_DEPT2 t2
+WHERE t1.PDEPT =t2.DCODE;
+>(ansi)
+SELECT t1.DNAME AS 부서명, t2.DNAME AS 상위부서명
+FROM T_DEPT2 t1 JOIN T_DEPT2 t2
+ON t1.PDEPT = t2.DCODE;
+
+* 실습 *
+직원테이블에서 직원명과 담당직원명 조회
+>(oracle)
+SELECT t1.ENAME AS 직원명, t2.ENAME AS 담당직원명
+FROM T_EMP t1, T_EMP t2
+WHERE t2.EMPNO =t1.MGR;
+>(ansi)
+SELECT t1.ENAME AS 직원명, t2.ENAME AS 담당직원명
+FROM T_EMP t1 JOIN T_EMP t2
+ON t2.EMPNO =t1.MGR;
+
+* 실습 *
+교수테이블에서 교수번호, 교수명, 입사일, 자기보다 입사일이 빠른 교수의 이름과 입사일 조회
+>(oracle) 가장입사일이 빠른 조인형교수님 빠짐 
+SELECT * FROM T_PROFESSOR;
+SELECT t1.PROFNO AS 교수번호, t1.NAME AS 교수명, t1.HIREDATE AS 입사일,
+t2.NAME AS 빠른교수명, t2.HIREDATE AS 빠른입사일
+FROM T_PROFESSOR t1, T_PROFESSOR t2 
+WHERE t1.hiredate > t2.hiredate
+ORDER BY 1;  
+>(ansi)
+SELECT * FROM T_PROFESSOR;
+SELECT t1.PROFNO AS 교수번호, t1.NAME AS 교수명, t1.HIREDATE AS 입사일,
+t2.NAME AS 빠른교수명, t2.HIREDATE AS 빠른입사일
+FROM T_PROFESSOR t1 LEFT OUTER JOIN T_PROFESSOR t2 
+ON t1.hiredate > t2.hiredate
+ORDER BY 1;  
+
+* 실습 *
+교수테이블에서 교수번호, 교수명, 입사일, 자기보다 입사일이 빠른 교수의 수 조회
+> SELECT t1.PROFNO AS 교수번호, t1.NAME AS 교수명, t1.HIREDATE AS 입사일, count(*) AS 빠른교수명수
+FROM T_PROFESSOR t1 LEFT OUTER JOIN T_PROFESSOR t2 
+ON t1.hiredate > t2.hiredate
+GROUP BY t1.PROFNO,t1.NAME,t1.HIREDATE
+ORDER BY 1; 
+
+<NATURAL JOIN>
+: 두 테이블간의 동일한 이름을 갖는 모든 컬럼에 대해 등가조인(equi join)을 수행 
+사용방법? 
+SELECT [컬럼명] FROM 테이블1 NATURAL JOIN 테이블2 WHERE [조건절];
+단, ON 은 사용 불가능
+
+* 실습 *
+직원테이블(t_emp)와 t_dept 테이블에서 사원번호, 사원명, 소속부서코드(deptno), 소속부서명을 조회
+>SELECT EMPNO,ENAME,DEPTNO,dname
+FROM T_EMP NATURAL JOIN T_DEPT;
+cf. 추가적으로 natural join과 inner join 비교해보기
+>SELECT * FROM T_EMP , T_DEPT WHERE t_emp.DEPTNO =t_dept.DEPTNO;
+
+
+
+
+[ USING ]
+- 정의? NATURAL JOIN 에서는 컬럼명이 동일하면 모든 컬럼에 대해 등가조인이 이루어졌지만, 
+	USING 조건절을 사용하면 같은 이름을 가진 컬럼들 중에서 등가조인을 원하는 컬럼을 선택할 수 있다
+- 사용이유? INNER JOIN할 때, 같은 컬럼이 중복으로 나오지 않게끔 하기 위해 많이 사용
+- ansi 기법밖에 없음
+
+* 실습 *
+학생 테이블과 교수 테이블에서 교수번호가 같은 학생의 교수번호, 담당학생명, 교수명을 조회
+>inner join 
+SELECT s.PROFNO, s.NAME AS 학생명, p.NAME AS 교수명
+FROM T_STUDENT s, T_PROFESSOR p 
+WHERE s.PROFNO=p.PROFNO;
+>USING 
+SELECT PROFNO, s.NAME AS 학생명, p.NAME AS 교수명
+FROM T_STUDENT s JOIN T_PROFESSOR p 
+USING (profno);
+
+* 실습 *
+직원2(t_emp2)테이블과 직급(t_post)테이블을 
+직급명, 직원명, 직원연봉(pay)를 조회하기
+단, 직급명으로 오름차순 정렬
+hint. using, natural join 
+> SELECT post, NAME, PAY
+FROM T_EMP2 NATURAL JOIN T_POST
+ORDER BY 1;
+
